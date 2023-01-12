@@ -399,6 +399,8 @@ class TeacherWidget(QWidget, teacher_form):
 # index 3 = 학생 프로그램, index 4 = 선생 프로그램
 if __name__ == "__main__":
     # 이따구로 하면 안되겠지
+    # 스레드 쓰기 어렵다
+    # 그래도 뭔가 됐는걸
     app = QApplication(sys.argv)
 
     stack = QtWidgets.QStackedWidget()
