@@ -135,6 +135,7 @@ class StudentWidget(QWidget, student_form):
         self.moveMessage.clicked.connect(self.move_message)
         self.moveCalendar.clicked.connect(self.calendar)
         self.moveChat.clicked.connect(self.move_chat)
+        self.moveChat.clicked.connect(self.show_chat)
         self.mainHome.clicked.connect(self.main_home)
         self.mainHome_2.clicked.connect(self.main_home)
         self.mainHome_3.clicked.connect(self.main_home)
@@ -148,6 +149,8 @@ class StudentWidget(QWidget, student_form):
         self.chat.clicked.connect(self.send_chat)
         self.chatText.returnPressed.connect(self.send_chat)
         self.chatLog.clicked.connect(self.show_chat)
+        self.teacherSet_2.currentTextChanged.connect(self.show_chat)
+        self.teacherSet_2.currentTextChanged.connect(self.show_chat)
 
     def log_out(self):
         self.parent().setCurrentIndex(0)
@@ -261,6 +264,9 @@ class StudentWidget(QWidget, student_form):
         chats = self.curs.fetchall()
         for chat in chats:
             self.chatting.append(chat[0])
+        self.curs.execute("update hrd.chats set checked = 0 where student = '%s' and teacher = '%s'" %
+                          (self.studentName.text(), self.teacherSet_2.currentText()))
+        self.conn.commit()
 
 
 class TeacherWidget(QWidget, teacher_form):
@@ -277,6 +283,7 @@ class TeacherWidget(QWidget, teacher_form):
         self.moveCalendar.clicked.connect(self.calendar)
         self.moveMessage.clicked.connect(self.message)
         self.moveChat.clicked.connect(self.move_chat)
+        self.moveChat.clicked.connect(self.show_chat)
         self.mainHome.clicked.connect(self.main_home)
         self.mainHome_2.clicked.connect(self.main_home)
         self.mainHome_3.clicked.connect(self.main_home)
@@ -289,6 +296,7 @@ class TeacherWidget(QWidget, teacher_form):
         self.chat.clicked.connect(self.send_chat)
         self.chatText.returnPressed.connect(self.send_chat)
         self.chatLog.clicked.connect(self.show_chat)
+        self.studentSet.currentTextChanged.connect(self.show_chat)
 
     def log_out(self):
         self.parent().setCurrentIndex(0)
@@ -382,6 +390,9 @@ class TeacherWidget(QWidget, teacher_form):
         chats = self.curs.fetchall()
         for chat in chats:
             self.chatting.append(chat[0])
+        self.curs.execute("update hrd.chats set checked = 0 where student = '%s' and teacher = '%s'" %
+                          (self.studentSet.currentText(), self.teacherName.text()))
+        self.conn.commit()
 
 
 # index 0 = 메인, index 1 = 회원가입, index 2 = 로그인
