@@ -146,6 +146,7 @@ class StudentWidget(QWidget, student_form):
         self.outingButton.clicked.connect(self.outing)
         self.sendMessage.clicked.connect(self.messaging)
         self.chat.clicked.connect(self.send_chat)
+        self.chatText.returnPressed.connect(self.send_chat)
         self.chatLog.clicked.connect(self.show_chat)
 
     def log_out(self):
@@ -211,6 +212,10 @@ class StudentWidget(QWidget, student_form):
             pass
 
     def outing(self):
+        self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
+        self.curs = self.conn.cursor()
+        self.curs.execute("select * from hrd.students where name = '%s'" % self.user)
+        students = self.curs.fetchall()
         if self.outingButton.text() == '외출':
             self.curs.execute("update hrd.students set outing = '외출 중' where name = '%s'" % self.user)
             self.conn.commit()
@@ -241,6 +246,11 @@ class StudentWidget(QWidget, student_form):
         self.show_chat()
         teacher.show_chat()
         teacher2.show_chat()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and teacher = '%s'" %
+                          self.teacherSet.currentText())
+        alarm_m = self.curs.fetchall()
+        teacher.chatA.setText(str(alarm_m[0][0]))
+        teacher2.chatA.setText(str(alarm_m[0][0]))
 
     def show_chat(self):
         self.chatting.clear()
@@ -277,6 +287,7 @@ class TeacherWidget(QWidget, teacher_form):
         self.studentsButton.clicked.connect(self.show_atten)
         self.showMessage.clicked.connect(self.show_message)
         self.chat.clicked.connect(self.send_chat)
+        self.chatText.returnPressed.connect(self.send_chat)
         self.chatLog.clicked.connect(self.show_chat)
 
     def log_out(self):
@@ -356,6 +367,11 @@ class TeacherWidget(QWidget, teacher_form):
         self.show_chat()
         student.show_chat()
         student2.show_chat()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and student = '%s'" %
+                          self.studentSet.currentText())
+        alarm_m = self.curs.fetchall()
+        student.chatA.setText(str(alarm_m[0][0]))
+        student2.chatA.setText(str(alarm_m[0][0]))
 
     def show_chat(self):
         self.chatting.clear()
@@ -395,6 +411,7 @@ if __name__ == "__main__":
     stack.addWidget(teacher)
     stack.setFixedWidth(450)
     stack.setFixedHeight(850)
+    stack.setStyleSheet('background-color : rgb(250, 250, 250)')
 
     stack2.addWidget(main2)
     stack2.addWidget(join2)
@@ -403,6 +420,7 @@ if __name__ == "__main__":
     stack2.addWidget(teacher2)
     stack2.setFixedWidth(450)
     stack2.setFixedHeight(850)
+    stack2.setStyleSheet('background-color : rgb(250, 250, 250)')
 
     stack.show()
     stack2.show()

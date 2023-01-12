@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">background-color : rgb(250, 250, 250)</string>
+  </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
@@ -143,6 +146,10 @@
      <bold>true</bold>
     </font>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color : rgb(96, 133, 255);
+color : rgb(255, 255, 255)</string>
+   </property>
    <property name="text">
     <string>가입 하기</string>
    </property>
@@ -242,6 +249,10 @@
      <weight>75</weight>
      <bold>true</bold>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color : rgb(96, 133, 255);
+color : rgb(255, 255, 255)</string>
    </property>
    <property name="text">
     <string>메인 화면</string>
