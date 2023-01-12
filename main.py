@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5 import uic, QtWidgets, QtCore
 import pymysql
 from datetime import datetime
+from PyQt5.QtCore import *
+import threading
 
 main_form = uic.loadUiType("main.ui")[0]
 join_form = uic.loadUiType("join.ui")[0]
@@ -95,15 +97,23 @@ class LoginWidget(QWidget, login_form):
                     student.userName_2.setText("%s" % u[0])
                     student.studentName.setText("%s" % u[0])
                     student.user = u[0]
+                    student2.userName.setText("%s" % u[0])
+                    student2.userName_2.setText("%s" % u[0])
+                    student2.studentName.setText("%s" % u[0])
+                    student2.user = u[0]
                 else:
                     self.parent().setCurrentIndex(4)
                     teacher.userName.setText("%s" % u[0])
                     teacher.teacherName.setText("%s" % u[0])
+                    teacher2.userName.setText("%s" % u[0])
+                    teacher2.teacherName.setText("%s" % u[0])
                     self.curs.execute("select count(checked) from hrd.messages where checked = 1 and sendto = '%s'" %
                                       u[0])
                     alarm_m = self.curs.fetchall()
                     teacher.messageA.setText(str(alarm_m[0][0]))
                     teacher.user = u[0]
+                    teacher2.messageA.setText(str(alarm_m[0][0]))
+                    teacher2.user = u[0]
         if not success:
             QMessageBox.information(self, '실패', 'ID나 비밀번호 혹은 신분이 잘못되었습니다.')
 
@@ -219,6 +229,7 @@ class StudentWidget(QWidget, student_form):
                           self.teacherSet.currentText())
         alarm_m = self.curs.fetchall()
         teacher.messageA.setText(str(alarm_m[0][0]))
+        teacher2.messageA.setText(str(alarm_m[0][0]))
 
     def send_chat(self):
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
@@ -228,6 +239,8 @@ class StudentWidget(QWidget, student_form):
                            self.studentName.text(), self.chatText.text(), 1))
         self.conn.commit()
         self.show_chat()
+        teacher.show_chat()
+        teacher2.show_chat()
 
     def show_chat(self):
         self.chatting.clear()
@@ -342,6 +355,7 @@ class TeacherWidget(QWidget, teacher_form):
         self.conn.commit()
         self.show_chat()
         student.show_chat()
+        student2.show_chat()
 
     def show_chat(self):
         self.chatting.clear()
@@ -357,6 +371,7 @@ class TeacherWidget(QWidget, teacher_form):
 # index 0 = 메인, index 1 = 회원가입, index 2 = 로그인
 # index 3 = 학생 프로그램, index 4 = 선생 프로그램
 if __name__ == "__main__":
+    # 이따구로 하면 안되겠지
     app = QApplication(sys.argv)
 
     stack = QtWidgets.QStackedWidget()
@@ -366,6 +381,13 @@ if __name__ == "__main__":
     student = StudentWidget()
     teacher = TeacherWidget()
 
+    stack2 = QtWidgets.QStackedWidget()
+    main2 = MainWidget()
+    join2 = JoinWidget()
+    login2 = LoginWidget()
+    student2 = StudentWidget()
+    teacher2 = TeacherWidget()
+
     stack.addWidget(main)
     stack.addWidget(join)
     stack.addWidget(login)
@@ -373,5 +395,16 @@ if __name__ == "__main__":
     stack.addWidget(teacher)
     stack.setFixedWidth(450)
     stack.setFixedHeight(850)
+
+    stack2.addWidget(main2)
+    stack2.addWidget(join2)
+    stack2.addWidget(login2)
+    stack2.addWidget(student2)
+    stack2.addWidget(teacher2)
+    stack2.setFixedWidth(450)
+    stack2.setFixedHeight(850)
+
     stack.show()
+    stack2.show()
+
     app.exec_()
