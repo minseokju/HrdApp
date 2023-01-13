@@ -93,27 +93,33 @@ class LoginWidget(QWidget, login_form):
                 # grade값에 따라 다른 화면을 불러오자
                 if grade == 'student':
                     self.parent().setCurrentIndex(3)
-                    student.userName.setText("%s" % u[0])
-                    student.userName_2.setText("%s" % u[0])
-                    student.studentName.setText("%s" % u[0])
-                    student.user = u[0]
-                    student2.userName.setText("%s" % u[0])
-                    student2.userName_2.setText("%s" % u[0])
-                    student2.studentName.setText("%s" % u[0])
-                    student2.user = u[0]
+                    if self.parent() == stack:
+                        student.userName.setText("%s" % u[0])
+                        student.userName_2.setText("%s" % u[0])
+                        student.studentName.setText("%s" % u[0])
+                        student.user = u[0]
+                    else:
+                        student2.userName.setText("%s" % u[0])
+                        student2.userName_2.setText("%s" % u[0])
+                        student2.studentName.setText("%s" % u[0])
+                        student2.user = u[0]
                 else:
                     self.parent().setCurrentIndex(4)
-                    teacher.userName.setText("%s" % u[0])
-                    teacher.teacherName.setText("%s" % u[0])
-                    teacher2.userName.setText("%s" % u[0])
-                    teacher2.teacherName.setText("%s" % u[0])
+                    if self.parent() == stack:
+                        teacher.userName.setText("%s" % u[0])
+                        teacher.teacherName.setText("%s" % u[0])
+                    else:
+                        teacher2.userName.setText("%s" % u[0])
+                        teacher2.teacherName.setText("%s" % u[0])
                     self.curs.execute("select count(checked) from hrd.messages where checked = 1 and sendto = '%s'" %
                                       u[0])
                     alarm_m = self.curs.fetchall()
-                    teacher.messageA.setText(str(alarm_m[0][0]))
-                    teacher.user = u[0]
-                    teacher2.messageA.setText(str(alarm_m[0][0]))
-                    teacher2.user = u[0]
+                    if self.parent() == stack:
+                        teacher.messageA.setText(str(alarm_m[0][0]))
+                        teacher.user = u[0]
+                    else:
+                        teacher2.messageA.setText(str(alarm_m[0][0]))
+                        teacher2.user = u[0]
         if not success:
             QMessageBox.information(self, '실패', 'ID나 비밀번호 혹은 신분이 잘못되었습니다.')
 
@@ -126,6 +132,7 @@ class StudentWidget(QWidget, student_form):
         super().__init__()
         self.setupUi(self)
         self.studentStack.setCurrentIndex(0)
+        self.page = 0
         self.user = ''
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
@@ -150,25 +157,53 @@ class StudentWidget(QWidget, student_form):
         self.chatText.returnPressed.connect(self.send_chat)
         self.chatLog.clicked.connect(self.show_chat)
         self.teacherSet_2.currentTextChanged.connect(self.show_chat)
-        self.teacherSet_2.currentTextChanged.connect(self.show_chat)
 
     def log_out(self):
         self.parent().setCurrentIndex(0)
 
     def move_message(self):
         self.studentStack.setCurrentIndex(1)
+        self.page = 1
 
     def calendar(self):
         self.studentStack.setCurrentIndex(3)
+        self.page = 3
 
     def move_chat(self):
         self.studentStack.setCurrentIndex(2)
+        self.page = 2
 
     def main_home(self):
         self.studentStack.setCurrentIndex(0)
+        self.page = 0
 
     def move_atten(self):
+        self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
+        self.curs = self.conn.cursor()
         self.studentStack.setCurrentIndex(4)
+        self.page = 4
+        self.curs.execute("select * from hrd.students where name = '%s'" % self.user)
+        student_atten = self.curs.fetchall()
+        print(student_atten)
+        self.attenTime.setText(student_atten[0][1])
+        self.backTime.setText(student_atten[0][2])
+        if student_atten[0][1] == '__ : __' and student_atten[0][2] == '__ : __':
+            self.attenButton.setText('입실')
+        elif student_atten[0][1] != '__ : __' and student_atten[0][2] == '__ : __':
+            self.attenButton.setText('퇴실')
+        elif student_atten[0][1] != '__ : __' and student_atten[0][2] != '__ : __':
+            self.attenButton.setText('퇴실 완료')
+        else:
+            self.attenButton.setText('뭔가 이상')
+        if student_atten[0][3] == '외출 복귀':
+            self.outingButton.setText('복귀 완료')
+            self.todayCheck.setText('외출')
+        elif student_atten[0][3] == '수강 완료':
+            self.outingButton.setText('퇴실 완료')
+            self.todayCheck.setText('수강 완료')
+        elif student_atten[0][3] == '미수강 중':
+            self.outingButton.setText('외출')
+            self.todayCheckl.setText('미수강 중')
 
     def show_task(self):
         date = self.sCalendar.selectedDate()
@@ -190,41 +225,53 @@ class StudentWidget(QWidget, student_form):
             self.sTasks.append("%s : %s" % task)
 
     def atten(self):
+        self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
+        self.curs = self.conn.cursor()
+        self.curs.execute("select * from hrd.students where name = '%s'" % self.user)
+        student_atten = self.curs.fetchall()
         if self.attenButton.text() == '입실':
             self.now = datetime.now()
             self.curs.execute("update hrd.students set intime = '%d : %d' where name = '%s'" %
                               (self.now.hour, self.now.minute, self.user))
             self.conn.commit()
             self.attenTime.setText('%d : %d' % (self.now.hour, self.now.minute))
-            self.curs.execute("update hrd.students set outing = '수강중' where name = '%s'" % self.user)
+            self.curs.execute("update hrd.students set outing = '수강 중' where name = '%s'" % self.user)
             self.conn.commit()
+            if (self.now.hour > 8 and self.now.minute > 20) or (self.now.hour > 9 and self.now.minute > 0):
+                self.todayCheck.setText('지각')
+            elif self.now.hour > 17:
+                self.todayCheck.setText('결석')
+            else:
+                self.todayCheck.setText('수강 중')
             self.attenButton.setText("퇴실")
-        elif self.attenButton.text() == '퇴실':
+        elif self.attenButton.text() == '퇴실' and student_atten[0][3] != '외출 중':
             self.curs.execute("update hrd.students set outtime = '%d : %d' where name = '%s'" %
                               (self.now.hour, self.now.minute, self.user))
             self.conn.commit()
             self.backTime.setText('%d : %d' % (self.now.hour, self.now.minute))
-            self.curs.execute("update hrd.students set outing = '수강 완료' where name = '%s'" % self.user)
-            self.conn.commit()
-            self.attenButton.setText("입실")
-        else:
-            pass
+            if self.now.hour < 17:
+                self.todayCheck.setText('조퇴')
+                self.curs.execute("update hrd.students set outing = '조퇴' where name = '%s'" % self.user)
+                self.conn.commit()
+            else:
+                self.todayCehck.setText('수강 완료')
+                self.curs.execute("update hrd.students set outing = '수강 완료' where name = '%s'" % self.user)
+                self.conn.commit()
+            self.outingButton.setText('퇴실 완료')
         if self.attenTime.text() != '__ : __' and self.backTime.text() != '__ : __':
             self.attenButton.setText("퇴실 완료")
-        else:
-            pass
 
     def outing(self):
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
         self.curs.execute("select * from hrd.students where name = '%s'" % self.user)
-        students = self.curs.fetchall()
-        if self.outingButton.text() == '외출':
+        student_atten = self.curs.fetchall()
+        if self.outingButton.text() == '외출' and student_atten[0][2] == '__ : __' and student_atten[0][1] != '__ : __':
             self.curs.execute("update hrd.students set outing = '외출 중' where name = '%s'" % self.user)
             self.conn.commit()
             self.outingButton.setText("외출 복귀")
-        else:
-            self.curs.execute("update hrd.students set outing = '복귀 완료' where name = '%s'" % self.user)
+        elif self.outingButton.text() == '외출 복귀':
+            self.curs.execute("update hrd.students set outing = '외출 복귀' where name = '%s'" % self.user)
             self.conn.commit()
             self.outingButton.setText("복귀 완료")
 
@@ -236,37 +283,53 @@ class StudentWidget(QWidget, student_form):
         self.curs.execute("select count(checked) from hrd.messages where checked = 1 and sendto = '%s'" %
                           self.teacherSet.currentText())
         alarm_m = self.curs.fetchall()
-        teacher.messageA.setText(str(alarm_m[0][0]))
-        teacher2.messageA.setText(str(alarm_m[0][0]))
+        if self.parent() == stack2:
+            teacher.messageA.setText(str(alarm_m[0][0]))
+        else:
+            teacher2.messageA.setText(str(alarm_m[0][0]))
 
     def send_chat(self):
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
-        self.curs.execute("insert into hrd.chats (student, teacher, chat, checked) values ('%s', '%s', '%s : %s', %d)" %
+        self.curs.execute("insert into hrd.chats (fromer, toer, chat, checked) values ('%s', '%s', '%s : %s', %d)" %
                           (self.studentName.text(), self.teacherSet_2.currentText(),
                            self.studentName.text(), self.chatText.text(), 1))
         self.conn.commit()
         self.show_chat()
-        teacher.show_chat()
-        teacher2.show_chat()
-        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and teacher = '%s'" %
+        if teacher.page == 2:
+            teacher.show_chat()
+        if teacher2.page == 2:
+            teacher2.show_chat()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and toer = '%s'" %
                           self.teacherSet.currentText())
         alarm_m = self.curs.fetchall()
-        teacher.chatA.setText(str(alarm_m[0][0]))
-        teacher2.chatA.setText(str(alarm_m[0][0]))
+        if teacher.page != 2:
+            teacher.chatA.setText(str(alarm_m[0][0]))
+        if teacher2.page != 2:
+            teacher2.chatA.setText(str(alarm_m[0][0]))
+        self.chatText.clear()
 
     def show_chat(self):
         self.chatting.clear()
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
-        self.curs.execute("select chat from hrd.chats where student = '%s' and teacher = '%s'" %
-                          (self.studentName.text(), self.teacherSet_2.currentText()))
+        self.curs.execute("select chat from hrd.chats where (fromer = '%s' and toer = '%s') or "
+                          "(fromer = '%s' and toer = '%s')" %
+                          (self.studentName.text(), self.teacherSet_2.currentText(),
+                           self.teacherSet_2.currentText(), self.studentName.text()))
         chats = self.curs.fetchall()
         for chat in chats:
             self.chatting.append(chat[0])
-        self.curs.execute("update hrd.chats set checked = 0 where student = '%s' and teacher = '%s'" %
+        self.curs.execute("update hrd.chats set checked = 0 where toer = '%s' and fromer = '%s'" %
                           (self.studentName.text(), self.teacherSet_2.currentText()))
         self.conn.commit()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and toer = '%s'" %
+                          self.studentName.text())
+        alarm_m = self.curs.fetchall()
+        if self.parent() == stack:
+            student.chatA.setText(str(alarm_m[0][0]))
+        else:
+            student2.chatA.setText(str(alarm_m[0][0]))
 
 
 class TeacherWidget(QWidget, teacher_form):
@@ -274,6 +337,7 @@ class TeacherWidget(QWidget, teacher_form):
         super().__init__()
         self.setupUi(self)
         self.teacherStack.setCurrentIndex(0)
+        self.page = 0
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
         self.user = ''
@@ -303,18 +367,23 @@ class TeacherWidget(QWidget, teacher_form):
 
     def calendar(self):
         self.teacherStack.setCurrentIndex(3)
+        self.page = 3
 
     def message(self):
         self.teacherStack.setCurrentIndex(1)
+        self.page = 1
 
     def move_chat(self):
         self.teacherStack.setCurrentIndex(2)
+        self.page = 2
 
     def main_home(self):
         self.teacherStack.setCurrentIndex(0)
+        self.page = 0
 
     def atten(self):
         self.teacherStack.setCurrentIndex(4)
+        self.page = 4
 
     def show_task(self):
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
@@ -368,31 +437,45 @@ class TeacherWidget(QWidget, teacher_form):
     def send_chat(self):
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
-        self.curs.execute("insert into hrd.chats (student, teacher, chat, checked) values ('%s', '%s', '%s : %s', %d)" %
-                          (self.studentSet.currentText(), self.teacherName.text(),
+        self.curs.execute("insert into hrd.chats (fromer, toer, chat, checked) values ('%s', '%s', '%s : %s', %d)" %
+                          (self.teacherName.text(), self.studentSet.currentText(),
                            self.teacherName.text(), self.chatText.text(), 1))
         self.conn.commit()
         self.show_chat()
-        student.show_chat()
-        student2.show_chat()
-        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and student = '%s'" %
+        if student.page == 2:
+            student.show_chat()
+        if student2.page == 2:
+            student2.show_chat()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and toer = '%s'" %
                           self.studentSet.currentText())
         alarm_m = self.curs.fetchall()
-        student.chatA.setText(str(alarm_m[0][0]))
-        student2.chatA.setText(str(alarm_m[0][0]))
+        if student.page != 2:
+            student.chatA.setText(str(alarm_m[0][0]))
+        if student2.page != 2:
+            student2.chatA.setText(str(alarm_m[0][0]))
+        self.chatText.clear()
 
     def show_chat(self):
         self.chatting.clear()
         self.conn = pymysql.connect(host='127.0.0.1', user='root', password='486486', db='hrd')
         self.curs = self.conn.cursor()
-        self.curs.execute("select chat from hrd.chats where student = '%s' and teacher = '%s'" %
-                          (self.studentSet.currentText(), self.teacherName.text()))
+        self.curs.execute("select chat from hrd.chats where (fromer = '%s' and toer = '%s') or"
+                          " (fromer = '%s' and toer = '%s')" %
+                          (self.studentSet.currentText(), self.teacherName.text(),
+                           self.teacherName.text(), self.studentSet.currentText()))
         chats = self.curs.fetchall()
         for chat in chats:
             self.chatting.append(chat[0])
-        self.curs.execute("update hrd.chats set checked = 0 where student = '%s' and teacher = '%s'" %
+        self.curs.execute("update hrd.chats set checked = 0 where fromer = '%s' and toer = '%s'" %
                           (self.studentSet.currentText(), self.teacherName.text()))
         self.conn.commit()
+        self.curs.execute("select count(checked) from hrd.chats where checked = 1 and toer = '%s'" %
+                          self.teacherName.text())
+        alarm_m = self.curs.fetchall()
+        if self.parent() == stack:
+            teacher.chatA.setText(str(alarm_m[0][0]))
+        else:
+            teacher2.chatA.setText(str(alarm_m[0][0]))
 
 
 # index 0 = 메인, index 1 = 회원가입, index 2 = 로그인
